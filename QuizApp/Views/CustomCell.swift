@@ -53,8 +53,6 @@ class CustomCell: UICollectionViewCell {
         contentView.addSubview(tit)
         contentView.addSubview(desc)
         contentView.addSubview(lvl)
-        contentView.clipsToBounds = true
-        contentView.layer.cornerRadius = 25
         
         
         tit.snp.makeConstraints {
@@ -81,7 +79,6 @@ class CustomCell: UICollectionViewCell {
     private func setImage(from url: String) {
         guard let imageURL = URL(string: url) else { return }
 
-            // just not to cause a deadlock in UI!
         DispatchQueue.global().async {
             guard let imageData = try? Data(contentsOf: imageURL) else { return }
 
@@ -105,7 +102,7 @@ class CustomCell: UICollectionViewCell {
                 image = UIImageView(image: img!.withTintColor(.yellow, renderingMode: .alwaysOriginal))
                 lvl.addArrangedSubview(image)
             } else {
-                image = UIImageView(image : img!.withTintColor(.gray, renderingMode: .alwaysOriginal))
+                image = UIImageView(image : img!.withTintColor(.darkGray, renderingMode: .alwaysOriginal))
                 lvl.addArrangedSubview(image)
             }
         }

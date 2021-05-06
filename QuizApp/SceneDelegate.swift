@@ -14,13 +14,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-            guard let windowScene = scene as? UIWindowScene else { return }
-
-            window = UIWindow(windowScene: windowScene)
-    //        let viewController = UIHostingController(rootView: ViewWithFrameSwiftUiView())
-            let viewController = LoginViewController()
-            window?.rootViewController = viewController
-            window?.makeKeyAndVisible()
+        guard let windowScene = scene as? UIWindowScene else { return }
+        window = UIWindow(windowScene: windowScene)
+//        let viewController = UIHostingController(rootView: ViewWithFrameSwiftUiView())
+        //let viewController = QuizzesViewController()
+        let navigationController = UINavigationController()
+        //navigationController.navigationBar.tintColor = .purple
+        navigationController.navigationBar.barTintColor = .purple
+        QuizzAppCoordinator(navigationController: navigationController).setStartScreen(in: window)
+        //window?.rootViewController = navigationController
+        //window?.rootViewController = viewController
+        //window?.makeKeyAndVisible()
         }
 
     func sceneDidDisconnect(_ scene: UIScene) {

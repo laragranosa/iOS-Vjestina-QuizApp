@@ -22,9 +22,9 @@ class SelectIconHeaderViewCell: UICollectionViewCell {
 
         mainView.addSubview(title)
         title.text = ""
-        title.font = UIFont(name:"ArialRoundedMTBold", size: 15.0)
+        title.font = UIFont(name:"ArialRoundedMTBold", size: 17.0)
         title.textAlignment = .left
-        title.textColor = .random
+        title.textColor = .white
         title.numberOfLines = 1
 
     }
@@ -54,13 +54,4 @@ class SelectIconHeaderViewCell: UICollectionViewCell {
         return NSStringFromClass(self)
     }
     
-}
-
-extension UIColor {
-    static var random: UIColor {
-        return UIColor(red: .random(in: 0.5...1),
-                       green: .random(in: 0...1),
-                       blue: .random(in: 0...1),
-                       alpha: 1.0)
-    }
 }

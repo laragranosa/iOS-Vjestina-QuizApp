@@ -4,13 +4,18 @@ import SnapKit
 class LoginViewController: UIViewController, UITextFieldDelegate {
     
     private var titleLabel: UILabel!
-    @IBOutlet weak var username: UITextField! { didSet { username.delegate = self } }
-    @IBOutlet weak var password: UITextField! { didSet { password.delegate = self } }
-    @IBOutlet var loginbutton: UIButton!
-    let eyeImage = UIImage(systemName: "eye.fill")!.withTintColor(.white, renderingMode: .alwaysOriginal)
-    let eyeImageCrossed = UIImage(systemName: "eye.slash.fill")
-    @IBOutlet var eyeButton: UIButton!
-    var iconClick = true
+    private var username: UITextField! { didSet { username.delegate = self } }
+    private var password: UITextField! { didSet { password.delegate = self } }
+    private var loginbutton: UIButton!
+    private let eyeImage = UIImage(systemName: "eye.fill")!.withTintColor(.white, renderingMode: .alwaysOriginal)
+    private var eyeButton: UIButton!
+    private var iconClick = true
+    private var coordinator: QuizAppProtocol!
+    
+    convenience init(coordinator: QuizAppProtocol) {
+        self.init()
+        self.coordinator = coordinator
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,8 +23,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         buildViews()
         addConstraints()
         
-        username.delegate = self
-        password.delegate = self
+
         if username.text!.isEmpty && password.text!.isEmpty{
             loginbutton.isUserInteractionEnabled = false
             loginbutton.backgroundColor = UIColor.white.withAlphaComponent(0.4)
@@ -58,7 +62,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         loginbutton.layer.cornerRadius = 20
         
         eyeButton = UIButton(type: .custom)
-        eyeButton.addTarget(self, action: Selector(("iconAction:")), for: UIControl.Event.allTouchEvents)
+        eyeButton.addTarget(self, action: Selector(("iconAction:")), for: UIControl.Event.touchUpInside)
         eyeButton.setImage(eyeImage, for: .normal)
         password.rightView = eyeButton
         password.rightViewMode = .always
@@ -75,20 +79,24 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         titleLabel.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.top.equalToSuperview().inset(200)
+            //$0.size.equalTo(CGSize(width: 340, height: 40))
         }
 
         username.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.top.equalTo(password).offset(password.frame.height/2 - 50)
+            //$0.size.equalTo(CGSize(width: 340, height: 40))
         }
 
         password.snp.makeConstraints {
             $0.center.equalToSuperview()
+            //$0.size.equalTo(CGSize(width: 340, height: 40))
         }
         
         loginbutton.snp.makeConstraints{
             $0.centerX.equalToSuperview()
             $0.top.equalTo(password).offset(password.frame.height/2 + 50)
+            //$0.size.equalTo(CGSize(width: 340, height: 40))
         }
     }
     
@@ -106,6 +114,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         let leftView = UIView(frame: CGRect(x: 0.0, y: 0.0, width: 10, height: 0))
         textField.leftView = leftView
         textField.leftViewMode = .always
+        textField.autocapitalizationType = .none
         return textField
     }
     
@@ -120,19 +129,23 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     }
     
     
-    @IBAction func buttonPress(_ sender: UIButton) {
-        print(username.text!)
-        print(password.text!)
-        print(DataService().login(email: username.text!, password: password.text!))
+    @objc func buttonPress(_ sender: UIButton) {
+        let login_username = username.text!
+        let login_password = password.text!
+        print(login_username)
+        print(login_password)
+        if ((DataService().login(email: login_username, password: login_password)) == LoginStatus.success){
+            coordinator.startTabBarController()
+        }
     }
     
-    @IBAction func iconAction(_ sender: UIButton) {
+    @objc func iconAction(_ sender: UIButton) {
         password.isSecureTextEntry.toggle()
     }
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
 
-        let text = (textField.text! as NSString).replacingCharacters(in: range, with: string)
+        let text = (textField.text! as NSString).replacingCharacters(in: range, with: string) as String
 
         if !text.isEmpty{
             loginbutton.isUserInteractionEnabled = true
