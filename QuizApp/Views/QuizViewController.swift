@@ -164,7 +164,7 @@ class QuizViewController: UIViewController {
                 }
             }
         }
-        tTime = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(changeSlide), userInfo: nil, repeats: true)
+        tTime = Timer.scheduledTimer(timeInterval: 3.5, target: self, selector: #selector(changeSlide), userInfo: nil, repeats: true)
         //.setProgress(Float(progressStatus), animated: true)
     }
     
@@ -177,7 +177,7 @@ class QuizViewController: UIViewController {
                     fatalError("Can't navigate to the next view controller!")
             }
                 let nextViewController = pageViewController.controllers[currentIndex + 1]
-            pageViewController.setViewControllers([nextViewController], direction: .forward, animated: true, completion: nil)
+            pageViewController.setViewControllers([nextViewController], direction: .forward, animated: false, completion: nil)
           }
         }
     }
