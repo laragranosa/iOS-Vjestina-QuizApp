@@ -4,7 +4,7 @@ protocol QuizAppProtocol{
     func setStartScreen(in window: UIWindow?)
     func showQuizzesViewController()
     func startTabBarController()
-    func createPageViewController(indexPath: IndexPath)
+    func createPageViewController(data: Quiz)
     func updatequizResult()
     func getResult() -> Int
     func getNumberOfQuestions() -> Int
@@ -40,6 +40,9 @@ class QuizzAppCoordinator: QuizAppProtocol {
     func startTabBarController() {
         let vc = createTabBarViewController()
         self.navigationController.setViewControllers([vc], animated: true)
+        
+        UIApplication.shared.windows.first?.rootViewController = navigationController
+        UIApplication.shared.windows.first?.makeKeyAndVisible()
     }
     
     
@@ -59,8 +62,8 @@ class QuizzAppCoordinator: QuizAppProtocol {
         return tabBarViewController
     }
     
-    func createPageViewController(indexPath: IndexPath) {
-        let pageViewController = QuestionsViewController(coordinator: self, indexPath: indexPath)
+    func createPageViewController(data: Quiz) {
+        let pageViewController = QuestionsViewController(coordinator: self, data: data)
         self.pageViewController = pageViewController
         self.navigationController.pushViewController(pageViewController, animated: true)
     }

@@ -9,26 +9,27 @@ class QuizViewController: UIViewController {
     private var progressStatus = 0
     private var progressBarStackView : UIStackView!
 
-    private var selectedQuiz: IndexPath!
+    private var questionData: Question!
     private var coordinator: QuizAppProtocol!
     private var sections = QuizCategory.allCases
     private var quizData: Quiz!
     private var questionIndex: Int!
     private var tTime = Timer()
     
-    convenience init(coordinator: QuizAppProtocol, data: IndexPath, questionIndex: Int) {
+    convenience init(coordinator: QuizAppProtocol, questionData: Question, quizData: Quiz) {
         self.init()
         self.coordinator = coordinator
-        self.selectedQuiz = data
-        self.questionIndex = questionIndex
+        self.questionData = questionData
+        self.quizData = quizData
     }
     
-    private let data = DataService().fetchQuizes()
+    private var data =  [Quiz]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        defineQuizdata()
+        self.questionIndex = self.quizData.questions.firstIndex{$0 == self.questionData!}
+        //defineQuizdata()
         getStackView()
         buildViews()
         addConstraints()
@@ -51,14 +52,14 @@ class QuizViewController: UIViewController {
         currentQuestionLabel.backgroundColor = .purple
         currentQuestionLabel.textColor = .white
         currentQuestionLabel.textAlignment = .center
-        currentQuestionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 20)
+        currentQuestionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 15)
         
         questionLabel = UILabel()
         questionLabel.backgroundColor = .purple
         questionLabel.numberOfLines = 3
         questionLabel.textColor = .white
         questionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 23.0)
-        questionLabel.text = self.quizData.questions[self.questionIndex].question
+        questionLabel.text = self.questionData.question
         
         buttonsStackView = UIStackView()
         buttonsStackView.axis = .vertical
@@ -92,7 +93,7 @@ class QuizViewController: UIViewController {
         self.progressBarStackView.snp.makeConstraints{
             $0.centerX.equalToSuperview()
             $0.top.equalTo(currentQuestionLabel).inset(30)
-            $0.size.equalTo(CGSize(width: 340, height: 20))
+            $0.size.equalTo(CGSize(width: 340, height: 10))
         }
         
         questionLabel.snp.makeConstraints{
@@ -112,20 +113,12 @@ class QuizViewController: UIViewController {
     private func getStackView(){
         self.progressBarStackView = coordinator.setProgressBarView()
     }
-
-    private func defineQuizdata(){
-        if self.selectedQuiz.section == 0{
-            self.quizData = self.data.filter{$0.category == sections[0]}[self.selectedQuiz.item]
-        } else {
-            self.quizData = self.data.filter{$0.category == sections[1]}[self.selectedQuiz.item]
-        }
-    }
     
     private func setButtons(){
-        let numberOfAnswers = 4
+        let numberOfAnswers = self.questionData.answers.count
         for i in 0...(numberOfAnswers-1) {
             let button = UIButton()
-            button.setTitle(String(self.quizData.questions[self.questionIndex].answers[i]), for: .normal)
+            button.setTitle(String(self.questionData.answers[i]), for: .normal)
             button.titleLabel?.font = UIFont(name:"ArialRoundedMTBold", size: 20.0)
             button.setTitleColor(.white, for: .normal)
             button.backgroundColor = UIColor.white.withAlphaComponent(0.6)
@@ -136,9 +129,25 @@ class QuizViewController: UIViewController {
         }
     }
     
+    private func fetchRemoteData() {
+        guard let url = URL(string: "https://iosquiz.herokuapp.com/api/quizzes") else { return }
+        var request = URLRequest(url: url)
+        print(url)
+        print(request)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        NetworkService().executeUrlRequest(request) { (result: Result<Quizzes, RequestError>) in
+            switch result {
+            case .failure(let error):
+                print(error)
+            case .success(let value):
+                self.data = value.quizzes
+        }}
+    }
+    
     @objc func correctAnswer(_ sender: UIButton) {
-        let answers = self.quizData.questions[self.questionIndex].answers
-        let correctAnswer = self.quizData.questions[self.questionIndex].correctAnswer
+        let answers = self.questionData.answers
+        let correctAnswer = self.questionData.correctAnswer
         var currentIndex = 0
         var pageView : QuestionsViewController?
         if let pageViewController = self.parent as? QuestionsViewController {
@@ -164,13 +173,11 @@ class QuizViewController: UIViewController {
                 }
             }
         }
-        tTime = Timer.scheduledTimer(timeInterval: 3.5, target: self, selector: #selector(changeSlide), userInfo: nil, repeats: true)
-        //.setProgress(Float(progressStatus), animated: true)
+        tTime = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(changeSlide), userInfo: nil, repeats: true)
     }
     
     @objc func changeSlide(){
         tTime.invalidate()
-        //coordinator.nextQuestion()
         if let pageViewController = self.parent as? QuestionsViewController {
             if let currentIndex = pageViewController.controllers.firstIndex(of: self) {
                 guard (pageViewController.controllers.count - currentIndex) > 1 else {

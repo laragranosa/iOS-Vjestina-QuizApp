@@ -11,10 +11,11 @@ class QuizzesViewController: UIViewController  {
     private var headerView: UIStackView!
     private var questCountView: UIView!
     
-    private var selectedQuiz: IndexPath!
+    private var selectedQuiz: Quiz!
 
-    private var data = [Quiz]()
-    private var sections = [QuizCategory]()
+    //var data: Quizzes?
+    var data = [Quiz]()
+    var sections = [QuizCategory]()
     
     private var coordinator: QuizAppProtocol!
     
@@ -97,11 +98,18 @@ class QuizzesViewController: UIViewController  {
     }
     
     @objc func fetchQuiz(_ sender: UIButton) {
-        self.data = DataService().fetchQuizes()
+        //self.data = DataService().fetchQuizes()
         self.sections = QuizCategory.allCases
-        self.quizes.reloadData()
-        let questionFilter = String(self.data.flatMap{$0.questions}.filter{$0.question.contains("NBA")}.count)
-        self.questCount.text = "There are " + questionFilter + " questions that cointain the word 'NBA'"
+        
+        DispatchQueue.global(qos: .userInitiated).sync {
+            self.fetchRemoteData()
+        }
+        
+        
+        
+        //print(self.data)
+        //let questionFilter = String(self.data.flatMap{$0.questions}.filter{$0.question.contains("NBA")}.count)
+        //self.questCount.text = "There are " + questionFilter + " questions that cointain the word 'NBA'"
         self.questCount.lineBreakMode = .byWordWrapping
         self.questCount.numberOfLines = 0
     }
@@ -125,6 +133,34 @@ class QuizzesViewController: UIViewController  {
 
         }
     
+    private func fetchRemoteData() {
+        guard let url = URL(string: "https://iosquiz.herokuapp.com/api/quizzes") else { return }
+        var request = URLRequest(url: url)
+        print(url)
+        print(request)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        NetworkService().executeUrlRequest(request) { (result: Result<Quizzes, RequestError>) in
+            switch result {
+            case .failure(let error):
+                print(error)
+            case .success(let value):
+                self.data = value.quizzes
+                DispatchQueue.main.async {
+                    self.quizes.reloadData()
+                    self.quizes.collectionViewLayout.invalidateLayout()
+                    self.quizes.layoutSubviews()
+                }
+        }}
+    }
+    
+    func fetchData() -> [Quiz] {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.fetchRemoteData()
+        }
+        return self.data
+    }
+    
 }
 
 extension QuizzesViewController: UICollectionViewDataSource {
@@ -135,9 +171,9 @@ extension QuizzesViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if section == 0{
-            return data.filter{$0.category == sections[0]}.count
+            return (self.data.filter{$0.category == sections[0]}.count)
         } else {
-            return data.filter{$0.category == sections[1]}.count
+            return (self.data.filter{$0.category == sections[1]}.count)
         }
     }
     
@@ -174,9 +210,13 @@ extension QuizzesViewController: UICollectionViewDataSource {
 
 extension QuizzesViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        self.selectedQuiz = indexPath
+        if indexPath.section == 0 {
+            self.selectedQuiz = self.data.filter{$0.category == sections[0]}[indexPath.item]
+        } else {
+            self.selectedQuiz = self.data.filter{$0.category == sections[1]}[indexPath.item]
+        }
         print("User tapped on item \(indexPath.row)")
-        coordinator.createPageViewController(indexPath: indexPath)
+        coordinator.createPageViewController(data: self.selectedQuiz)
     }
     
 }
