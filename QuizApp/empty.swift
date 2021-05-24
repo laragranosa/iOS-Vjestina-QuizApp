@@ -1,0 +1,2 @@
+struct empty: Codable {
+}

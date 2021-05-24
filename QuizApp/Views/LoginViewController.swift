@@ -134,8 +134,11 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         let login_password = password.text!
         print(login_username)
         print(login_password)
-        if ((DataService().login(email: login_username, password: login_password)) == LoginStatus.success){
-            coordinator.startTabBarController()
+        DispatchQueue.global(qos: .userInitiated).sync {
+            customLogin()
+        }
+        DispatchQueue.main.async {
+            self.coordinator.startTabBarController()
         }
     }
     
@@ -157,4 +160,24 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         return true
     }
     
+    func customLogin(){
+        guard let user = username.text else { return }
+        guard let pass = password.text else { return }
+        guard let url = URL(string: "https://iosquiz.herokuapp.com/api/session?username=\(user)&password=\(pass)") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        NetworkService().executeUrlRequest(request) { (result: Result< Session, RequestError>) in
+            switch result {
+            case .failure( _):
+                print("error")
+                //handleRequestError(error)
+            case .success(let value):
+                print(value)
+                let defaults = UserDefaults.standard
+                defaults.set(value.token, forKey: "token")
+                defaults.set(value.user_id, forKey: "user_id")
+        }
+        }
+    }
 }
