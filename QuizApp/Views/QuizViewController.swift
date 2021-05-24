@@ -9,17 +9,17 @@ class QuizViewController: UIViewController {
     private var progressStatus = 0
     private var progressBarStackView : UIStackView!
 
-    private var questionData: Question!
+    private var currentQuestion: Question!
     private var coordinator: QuizAppProtocol!
-    private var sections = QuizCategory.allCases
     private var quizData: Quiz!
-    private var questionIndex: Int!
+    private var questionIndex = 0
     private var tTime = Timer()
+    private var result = 0
+    private var startTime = DispatchTime.now()
     
-    convenience init(coordinator: QuizAppProtocol, questionData: Question, quizData: Quiz) {
+    convenience init(coordinator: QuizAppProtocol, quizData: Quiz) {
         self.init()
         self.coordinator = coordinator
-        self.questionData = questionData
         self.quizData = quizData
     }
     
@@ -28,9 +28,13 @@ class QuizViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.questionIndex = self.quizData.questions.firstIndex{$0 == self.questionData!}
-        //defineQuizdata()
-        getStackView()
+        self.currentQuestion = self.quizData.questions[self.questionIndex]
+        progressBarStackView = UIStackView()
+        progressBarStackView.axis = .horizontal
+        progressBarStackView.distribution = .fillEqually
+        progressBarStackView.spacing = 2.5
+        setProgressBars()
+        
         buildViews()
         addConstraints()
         
@@ -59,7 +63,7 @@ class QuizViewController: UIViewController {
         questionLabel.numberOfLines = 3
         questionLabel.textColor = .white
         questionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 23.0)
-        questionLabel.text = self.questionData.question
+        questionLabel.text = self.quizData.questions[self.questionIndex].question
         
         buttonsStackView = UIStackView()
         buttonsStackView.axis = .vertical
@@ -69,7 +73,7 @@ class QuizViewController: UIViewController {
         
         view.addSubview(titleLabel)
         view.addSubview(currentQuestionLabel)
-        view.addSubview(self.progressBarStackView)
+        view.addSubview(progressBarStackView)
         view.addSubview(questionLabel)
         view.addSubview(buttonsStackView)
         
@@ -110,15 +114,11 @@ class QuizViewController: UIViewController {
         
     }
     
-    private func getStackView(){
-        self.progressBarStackView = coordinator.setProgressBarView()
-    }
-    
     private func setButtons(){
-        let numberOfAnswers = self.questionData.answers.count
-        for i in 0...(numberOfAnswers-1) {
+        let answers = self.currentQuestion.answers
+        for i in 0...(answers.count-1) {
             let button = UIButton()
-            button.setTitle(String(self.questionData.answers[i]), for: .normal)
+            button.setTitle(String(answers[i]), for: .normal)
             button.titleLabel?.font = UIFont(name:"ArialRoundedMTBold", size: 20.0)
             button.setTitleColor(.white, for: .normal)
             button.backgroundColor = UIColor.white.withAlphaComponent(0.6)
@@ -129,42 +129,32 @@ class QuizViewController: UIViewController {
         }
     }
     
-    private func fetchRemoteData() {
-        guard let url = URL(string: "https://iosquiz.herokuapp.com/api/quizzes") else { return }
-        var request = URLRequest(url: url)
-        print(url)
-        print(request)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        NetworkService().executeUrlRequest(request) { (result: Result<Quizzes, RequestError>) in
-            switch result {
-            case .failure(let error):
-                print(error)
-            case .success(let value):
-                self.data = value.quizzes
-        }}
+    private func setProgressBars() {
+        for _ in 1...self.quizData.questions.count {
+            let QuestionTrackerView = UIProgressView(progressViewStyle: .bar)
+            QuestionTrackerView.trackTintColor = .white
+            QuestionTrackerView.setProgress(0, animated:false)
+            QuestionTrackerView.bounds = CGRect(x: 0, y: 0, width: 50, height: 10)
+            QuestionTrackerView.clipsToBounds = true
+            QuestionTrackerView.layer.cornerRadius = 3
+            self.progressBarStackView.addArrangedSubview(QuestionTrackerView)
+        }
     }
     
     @objc func correctAnswer(_ sender: UIButton) {
-        let answers = self.questionData.answers
-        let correctAnswer = self.questionData.correctAnswer
-        var currentIndex = 0
-        var pageView : QuestionsViewController?
-        if let pageViewController = self.parent as? QuestionsViewController {
-            pageView = (self.parent as? QuestionsViewController)!
-            currentIndex =
-                pageViewController.controllers.firstIndex(of: self)! }
+        let answers = self.currentQuestion.answers
+        let correctAnswer = self.currentQuestion.correctAnswer
         for button in buttonsStackView.arrangedSubviews {
             button.isUserInteractionEnabled = false }
         if (sender.currentTitle == answers[correctAnswer]) {
             sender.backgroundColor = .green
-            coordinator.updatequizResult()
-            let currentProgressBar = pageView!.progressBarStackView.arrangedSubviews[currentIndex] as? UIProgressView
+            self.result+=1
+            let currentProgressBar = progressBarStackView.arrangedSubviews[self.questionIndex] as? UIProgressView
             currentProgressBar?.tintColor = .green
             currentProgressBar?.setProgress(1, animated: true)
         } else {
             sender.backgroundColor = .red
-            let currentProgressBar = pageView!.progressBarStackView.arrangedSubviews[currentIndex] as? UIProgressView
+            let currentProgressBar = progressBarStackView.arrangedSubviews[self.questionIndex] as? UIProgressView
             currentProgressBar?.tintColor = .red
             currentProgressBar?.setProgress(1, animated: true)
             for button in buttonsStackView.arrangedSubviews {
@@ -173,19 +163,22 @@ class QuizViewController: UIViewController {
                 }
             }
         }
-        tTime = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(changeSlide), userInfo: nil, repeats: true)
+        tTime = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateQuizViewController), userInfo: nil, repeats: false)
     }
     
-    @objc func changeSlide(){
-        tTime.invalidate()
-        if let pageViewController = self.parent as? QuestionsViewController {
-            if let currentIndex = pageViewController.controllers.firstIndex(of: self) {
-                guard (pageViewController.controllers.count - currentIndex) > 1 else {
-                    fatalError("Can't navigate to the next view controller!")
-            }
-                let nextViewController = pageViewController.controllers[currentIndex + 1]
-            pageViewController.setViewControllers([nextViewController], direction: .forward, animated: false, completion: nil)
-          }
+    @objc func updateQuizViewController(){
+        if self.questionIndex == self.quizData.questions.count-1 {
+            let endTime = DispatchTime.now()
+            let quizTime = Double(endTime.uptimeNanoseconds - self.startTime.uptimeNanoseconds) / 1_000_000_000
+            let quizResults = "\(self.result)/\(self.quizData.questions.count)"
+            coordinator.setResultViewController(time: quizTime, quizId: self.quizData.id, quizResult: quizResults)
+        } else {
+            self.questionIndex+=1
+            self.currentQuestion = self.quizData.questions[self.questionIndex]
+            tTime.invalidate()
+            view.subviews.forEach({ $0.removeFromSuperview() })
+            buildViews()
+            addConstraints()
         }
     }
 }

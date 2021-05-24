@@ -4,15 +4,17 @@ import SnapKit
 class QuizResultViewController: UIViewController {
     
     private var coordinator: QuizAppProtocol!
-    private var start_time: DispatchTime!
-    private var quiz_id: Int!
+    private var quizTime: Double!
+    private var quizId: Int!
     private var correctAnswers: Int!
+    private var quizResult: String!
     
-    convenience init(coordinator: QuizAppProtocol, time: DispatchTime, quiz_id: Int) {
+    convenience init(coordinator: QuizAppProtocol, time: Double, quizId: Int, quizResult: String) {
         self.init()
         self.coordinator = coordinator
-        self.start_time = time
-        self.quiz_id = quiz_id
+        self.quizTime = time
+        self.quizId = quizId
+        self.quizResult = quizResult
     }
     
     private let result: UILabel = {
@@ -42,13 +44,13 @@ class QuizResultViewController: UIViewController {
         addConstraints()
         
         self.view = view
-        updateLabel()
-        
         
     }
     
     private func buildViews(){
         view.backgroundColor = .purple
+        
+        result.text = self.quizResult
 
         view.addSubview(finishButton)
         view.addSubview(result)
@@ -68,16 +70,10 @@ class QuizResultViewController: UIViewController {
             $0.size.equalTo(CGSize(width: 340,height: 40))
         }
     }
-    
-    private func updateLabel() {
-        self.correctAnswers = coordinator.getResult()
-        let numberOfQuestions = coordinator.getNumberOfQuestions()
-        self.result.text = "\(Int(self.correctAnswers))/\(numberOfQuestions)"
-    }
-    
+
     @objc func finishQuiz(_ sender: UIButton){
-        let end_time = DispatchTime.now()
-        let quizTime = Double(end_time.uptimeNanoseconds - start_time.uptimeNanoseconds) / 1_000_000_000
+        
+        self.correctAnswers = (self.quizResult.split(separator: "/")[0] as NSString).integerValue
         
         guard let url = URL(string: "https://iosquiz.herokuapp.com/api/result") else { return }
         var request = URLRequest(url: url)
@@ -86,8 +82,8 @@ class QuizResultViewController: UIViewController {
         request.setValue(token, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let user_id = UserDefaults.standard.integer(forKey: "user_id")
-        request.httpBody = try! JSONEncoder().encode(QuizResult(time: quizTime, no_of_correct: self.correctAnswers, quiz_id: self.quiz_id, user_id: user_id))
+        let userId = UserDefaults.standard.integer(forKey: "user_id")
+        request.httpBody = try! JSONEncoder().encode(QuizResult(time: self.quizTime, noOfCorrect: self.correctAnswers, quizId: self.quizId, userId: userId))
 
         NetworkService().executeUrlRequest(request) { (result: Result<empty, RequestError>) in
             switch result {

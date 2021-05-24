@@ -5,5 +5,8 @@ enum ServerStatus: Int, CaseIterable {
     case NOT_FOUND = 404
     case BAD_REQUEST = 400
     case OK = 200
+    var code: Int {
+        return self.rawValue
+    }
     
 }

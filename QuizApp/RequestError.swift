@@ -3,4 +3,5 @@ enum RequestError: Error {
     case serverError
     case noData
     case dataDecodingError
+    case networkConnectivity
 }

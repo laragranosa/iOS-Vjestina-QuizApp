@@ -1,4 +1,4 @@
-struct Question: Codable, Equatable {
+struct Question: Codable {
 
     let id: Int
     let question: String

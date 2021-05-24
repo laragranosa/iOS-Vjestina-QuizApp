@@ -3,11 +3,11 @@ import SystemConfiguration
 
 class NetworkService {
     
-    func executeUrlRequest<T : Codable>(_ request: URLRequest, completionHandler: @escaping(Result<T, RequestError>) -> Void) {
+    func executeUrlRequest<T: Codable>(_ request: URLRequest, completionHandler: @escaping(Result<T, RequestError>) -> Void) {
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, err in
 
             if !Reachability.isConnectedToNetwork(){
-                print("Internet connection not available!")
+                completionHandler(.failure(.networkConnectivity))
             }
             
             
@@ -18,6 +18,11 @@ class NetworkService {
             
             guard let httpResponse = response as? HTTPURLResponse,(200...299).contains(httpResponse.statusCode) else {
                 completionHandler(.failure(.serverError))
+                ServerStatus.allCases.forEach {
+                    if $0.code == (response as? HTTPURLResponse)?.statusCode {
+                        print($0)
+                    }
+                }
                 return
             }
             
