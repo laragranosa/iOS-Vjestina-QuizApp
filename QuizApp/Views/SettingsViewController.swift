@@ -50,7 +50,7 @@ class SettingsViewController: UIViewController {
     }
     
     private func buildViews(){
-        view.backgroundColor = .purple
+        view.backgroundColor = customDesign().mycolor
 
         view.addSubview(username)
         view.addSubview(myUsername)

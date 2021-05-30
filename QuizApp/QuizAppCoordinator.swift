@@ -1,11 +1,14 @@
 import UIKit
 
 protocol QuizAppProtocol{
+    
     func setStartScreen(in window: UIWindow?)
-    func showQuizzesViewController()
+    func createQuizzesViewController() -> QuizzesViewController
     func startTabBarController()
-    func createQuizViewController(data: Quiz)
+    func createQuizViewController(data: QuizViewModel)
     func setResultViewController(time: Double, quizId: Int, quizResult: String)
+    func createPresenter() -> QuizzesPresenter
+    func createRepository() -> QuizRepository
     
 }
 
@@ -25,11 +28,29 @@ class QuizzAppCoordinator: QuizAppProtocol {
         window?.makeKeyAndVisible()
     }
     
-    func showQuizzesViewController() {
-        let vc = QuizzesViewController(coordinator: self)
+    func createPresenter() -> QuizzesPresenter {
+        let quizzesDataRepository = createRepository()
+        let quizUseCase = QuizzesUseCase(quizzesRepository: quizzesDataRepository)
+        let presenter = QuizzesPresenter(quizUseCase: quizUseCase, coordinator: self)
+        return presenter
+    }
+    
+    func createRepository() -> QuizRepository {
+        let coreDataContext = CoreDataStack(modelName: "QuizDatabaseModel").managedContext
+        return QuizRepository(
+            jsonDataSource: QuizNetworkDataSource(),
+            coreDataSource: QuizDatabaseDataSource(coreDataContext: coreDataContext))
+    }
+    
+    func createQuizzesViewController() -> QuizzesViewController {
+        let coreDataContext = CoreDataStack(modelName: "QuizDatabaseModel").managedContext
+        let quizzesDataRepository = QuizRepository(
+            jsonDataSource: QuizNetworkDataSource(),
+            coreDataSource: QuizDatabaseDataSource(coreDataContext: coreDataContext))
+        let presenter = createPresenter()
+        let vc = QuizzesViewController(coordinator: self, presenter: presenter, quizRepository: quizzesDataRepository)
         
-        UIApplication.shared.windows.first?.rootViewController = vc
-        UIApplication.shared.windows.first?.makeKeyAndVisible()
+        return vc
 
     }
     
@@ -45,20 +66,27 @@ class QuizzAppCoordinator: QuizAppProtocol {
     func createTabBarViewController() -> UIViewController {
         let imageQuiz = UIImage(named: "stopwatch")?.maskWithColor(color: .purple)
         let imageSettings = UIImage(named: "gear")?.maskWithColor(color: .purple)
-        let quizzesViewController = QuizzesViewController(coordinator: self)
+        let imageSearch = UIImage(named: "magnifyingglass")?.maskWithColor(color: .purple)
+        let presenter = createPresenter()
+        let repository = createRepository()
+        let quizzesViewController =
+            createQuizzesViewController()
         quizzesViewController.tabBarItem = UITabBarItem(title: "Quiz", image: UIImage(systemName: "stopwatch"), selectedImage: imageQuiz)
+        
+        let searchVC = SearchQuizViewController(coordinator: self, presenter: presenter, repository: repository)
+        searchVC.tabBarItem = UITabBarItem(title: "Search", image: UIImage(systemName: "magnifyingglass"), selectedImage: imageSearch)
 
         let settingsViewController = SettingsViewController(coordinator: self)
         settingsViewController.tabBarItem = UITabBarItem(title: "Settings",image: UIImage(systemName: "gear"),selectedImage: imageSettings)
 
         let tabBarViewController = UITabBarController()
         tabBarViewController.tabBar.tintColor = .purple
-        tabBarViewController.viewControllers = [quizzesViewController, settingsViewController]
+        tabBarViewController.viewControllers = [quizzesViewController, searchVC, settingsViewController]
 
         return tabBarViewController
     }
     
-    func createQuizViewController(data: Quiz) {
+    func createQuizViewController(data: QuizViewModel) {
         let vc = QuizViewController(coordinator: self, quizData: data)
         self.navigationController.pushViewController(vc, animated: true)
     }

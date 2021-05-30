@@ -3,18 +3,7 @@ import SnapKit
 
 class CustomCell: UICollectionViewCell {
     
-    var data: Quiz? {
-        didSet {
-            guard let data = data else { return }
-            tit.text = data.title
-            desc.text = data.description
-            setLevel(data.level)
-            setImage(from: data.imageUrl)
-            
-        }
-    }
-    
-    fileprivate let tit: UILabel = {
+    private let tit: UILabel = {
         let ti = UILabel()
         ti.numberOfLines = 1
         ti.textColor = .white
@@ -22,7 +11,7 @@ class CustomCell: UICollectionViewCell {
         return ti
     }()
     
-    fileprivate let desc: UILabel = {
+    private let desc: UILabel = {
         let ti = UILabel()
         ti.numberOfLines = 2
         ti.textColor = .white
@@ -30,14 +19,14 @@ class CustomCell: UICollectionViewCell {
         return ti
     }()
     
-    fileprivate let imU: UIImageView = {
+    private let imU: UIImageView = {
         let ti = UIImageView(frame: CGRect(x:10, y:0, width: 100, height: 100))
         ti.contentMode = .scaleAspectFit
         ti.clipsToBounds = true
         return ti
     }()
     
-    fileprivate let lvl: UIStackView = {
+    private let lvl: UIStackView = {
         let ti = UIStackView(frame: CGRect(x:0, y:0, width: 50, height: 15))
         ti.axis = .horizontal
         return ti
@@ -106,5 +95,12 @@ class CustomCell: UICollectionViewCell {
                 lvl.addArrangedSubview(image)
             }
         }
+    }
+    
+    func set(viewModel: QuizViewModel) {
+        tit.text = viewModel.title
+        desc.text = viewModel.description
+        setLevel(viewModel.level)
+        setImage(from: viewModel.imageUrl)
     }
 }

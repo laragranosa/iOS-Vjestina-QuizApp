@@ -32,7 +32,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     }
     
     private func buildViews() {
-        view.backgroundColor = .purple
+        view.backgroundColor = customDesign().mycolor
         
         titleLabel = UILabel()
         titleLabel.text = "PopQuiz"
@@ -51,15 +51,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         
         loginbutton = UIButton(type: .system)
         loginbutton.addTarget(self, action: Selector(("buttonPress:")), for: .touchUpInside)
-        loginbutton.translatesAutoresizingMaskIntoConstraints = false
-        loginbutton.widthAnchor.constraint(equalToConstant: 340).isActive = true
-        loginbutton.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        loginbutton.setTitle("Login", for: .normal)
-        loginbutton.titleLabel?.font = UIFont(name:"ArialRoundedMTBold", size: 15.0)
-        loginbutton.setTitleColor(.purple, for: .normal)
-        loginbutton.backgroundColor = .white
-        loginbutton.clipsToBounds = true
-        loginbutton.layer.cornerRadius = 20
+        loginbutton = customDesign().styleButton(button: loginbutton, title: "Login", width: 335)
         
         eyeButton = UIButton(type: .custom)
         eyeButton.addTarget(self, action: Selector(("iconAction:")), for: UIControl.Event.touchUpInside)
@@ -85,12 +77,12 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         username.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.top.equalTo(password).offset(password.frame.height/2 - 50)
-            //$0.size.equalTo(CGSize(width: 340, height: 40))
+            $0.leadingMargin.equalTo(view.safeAreaInsets).offset(30)
         }
 
         password.snp.makeConstraints {
             $0.center.equalToSuperview()
-            //$0.size.equalTo(CGSize(width: 340, height: 40))
+            $0.leadingMargin.equalTo(view.safeAreaInsets).offset(30)
         }
         
         loginbutton.snp.makeConstraints{
@@ -100,10 +92,9 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         }
     }
     
-    private func buildTextField(string: String) -> UITextField {
+    func buildTextField(string: String) -> UITextField {
         let textField : UITextField! = UITextField()
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.widthAnchor.constraint(equalToConstant: 340).isActive = true
         textField.heightAnchor.constraint(equalToConstant: 40).isActive = true
         textField.attributedPlaceholder = NSAttributedString(string: string,
                                                              attributes: [NSAttributedString.Key.foregroundColor: UIColor.white])
@@ -137,9 +128,6 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         DispatchQueue.global(qos: .userInitiated).sync {
             customLogin()
         }
-        DispatchQueue.main.async {
-            self.coordinator.startTabBarController()
-        }
     }
     
     @objc func iconAction(_ sender: UIButton) {
@@ -171,12 +159,14 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
             switch result {
             case .failure( _):
                 print("error")
-                //handleRequestError(error)
             case .success(let value):
-                print(value)
                 let defaults = UserDefaults.standard
                 defaults.set(value.token, forKey: "token")
                 defaults.set(value.user_id, forKey: "user_id")
+                
+                DispatchQueue.main.async {
+                    self.coordinator.startTabBarController()
+                }
         }
         }
     }
