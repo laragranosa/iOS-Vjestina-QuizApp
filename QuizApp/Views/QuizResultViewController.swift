@@ -29,7 +29,7 @@ class QuizResultViewController: UIViewController {
         let finishButton = UIButton()
         finishButton.setTitle("Finish quiz", for: .normal)
         finishButton.titleLabel?.font = UIFont(name:"ArialRoundedMTBold", size: 15.0)
-        finishButton.setTitleColor(.purple, for: .normal)
+        finishButton.setTitleColor(customDesign().mycolor, for: .normal)
         finishButton.backgroundColor = .white
         finishButton.clipsToBounds = true
         finishButton.layer.cornerRadius = 20
@@ -48,7 +48,7 @@ class QuizResultViewController: UIViewController {
     }
     
     private func buildViews(){
-        view.backgroundColor = .purple
+        view.backgroundColor = customDesign().mycolor
         
         result.text = self.quizResult
 
@@ -88,10 +88,8 @@ class QuizResultViewController: UIViewController {
         NetworkService().executeUrlRequest(request) { (result: Result<empty, RequestError>) in
             switch result {
             case .failure(let error):
-                //handleRequestError(error)
                 print(error)
             case .success(let value):
-                //print(value)
                 print(value)
         }}
         

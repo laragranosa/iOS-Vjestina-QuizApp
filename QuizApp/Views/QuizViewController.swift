@@ -1,5 +1,6 @@
 import UIKit
 import SnapKit
+import CoreData
 
 class QuizViewController: UIViewController {
     private var titleLabel: UILabel!
@@ -11,13 +12,13 @@ class QuizViewController: UIViewController {
 
     private var currentQuestion: Question!
     private var coordinator: QuizAppProtocol!
-    private var quizData: Quiz!
+    private var quizData: QuizViewModel!
     private var questionIndex = 0
     private var tTime = Timer()
     private var result = 0
     private var startTime = DispatchTime.now()
     
-    convenience init(coordinator: QuizAppProtocol, quizData: Quiz) {
+    convenience init(coordinator: QuizAppProtocol, quizData: QuizViewModel) {
         self.init()
         self.coordinator = coordinator
         self.quizData = quizData
@@ -28,7 +29,7 @@ class QuizViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.currentQuestion = self.quizData.questions[self.questionIndex]
+        self.currentQuestion = self.quizData.questions[questionIndex]
         progressBarStackView = UIStackView()
         progressBarStackView.axis = .horizontal
         progressBarStackView.distribution = .fillEqually
@@ -43,7 +44,7 @@ class QuizViewController: UIViewController {
     }
     
     private func buildViews() {
-        view.backgroundColor = .purple
+        view.backgroundColor = customDesign().mycolor
         
         titleLabel = UILabel()
         titleLabel.text = "PopQuiz"
@@ -53,13 +54,13 @@ class QuizViewController: UIViewController {
         
         currentQuestionLabel = UILabel()
         currentQuestionLabel.text = "\(self.questionIndex+1)/\(self.quizData.questions.count)"
-        currentQuestionLabel.backgroundColor = .purple
+        currentQuestionLabel.backgroundColor = customDesign().mycolor
         currentQuestionLabel.textColor = .white
         currentQuestionLabel.textAlignment = .center
         currentQuestionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 15)
         
         questionLabel = UILabel()
-        questionLabel.backgroundColor = .purple
+        questionLabel.backgroundColor = customDesign().mycolor
         questionLabel.numberOfLines = 3
         questionLabel.textColor = .white
         questionLabel.font = UIFont(name:"ArialRoundedMTBold", size: 23.0)
@@ -134,7 +135,7 @@ class QuizViewController: UIViewController {
             let QuestionTrackerView = UIProgressView(progressViewStyle: .bar)
             QuestionTrackerView.trackTintColor = .white
             QuestionTrackerView.setProgress(0, animated:false)
-            QuestionTrackerView.bounds = CGRect(x: 0, y: 0, width: 50, height: 10)
+            QuestionTrackerView.bounds = CGRect(x: 0, y: 0, width: 50, height: 5)
             QuestionTrackerView.clipsToBounds = true
             QuestionTrackerView.layer.cornerRadius = 3
             self.progressBarStackView.addArrangedSubview(QuestionTrackerView)

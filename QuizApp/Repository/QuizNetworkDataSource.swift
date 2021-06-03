@@ -1,9 +1,15 @@
-import UIKit
+import Foundation
 import SystemConfiguration
 
-class NetworkService {
+class QuizNetworkDataSource {
     
-    func executeUrlRequest<T: Codable>(_ request: URLRequest, completionHandler: @escaping(Result<T, RequestError>) -> Void) {
+    init() {}
+    static let network = QuizNetworkDataSource()
+    
+    let urlSession = URLSession.shared
+    var baseURL = URL(string: "https://iosquiz.herokuapp.com/api/")
+    
+    func getQuizzes<T: Codable>(_ request: URLRequest, completionHandler: @escaping(Result<T, RequestError>) -> Void) {
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, err in
 
             if !Reachability.isConnectedToNetwork(){
@@ -38,6 +44,4 @@ class NetworkService {
             }
             dataTask.resume()
     }
-    
-    
 }
