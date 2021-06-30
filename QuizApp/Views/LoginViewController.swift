@@ -23,6 +23,8 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         buildViews()
         addConstraints()
         
+        entranceAnimation()
+        
 
         if username.text!.isEmpty && password.text!.isEmpty{
             loginbutton.isUserInteractionEnabled = false
@@ -88,8 +90,64 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         loginbutton.snp.makeConstraints{
             $0.centerX.equalToSuperview()
             $0.top.equalTo(password).offset(password.frame.height/2 + 50)
-            //$0.size.equalTo(CGSize(width: 340, height: 40))
         }
+    }
+    
+    private func entranceAnimation() {
+        titleLabel.transform = titleLabel.transform.scaledBy(x: 0, y: 0)
+        titleLabel.alpha = 0
+
+        username.transform = username.transform.translatedBy(x: -view.frame.width, y: 0)
+        username.alpha = 0
+
+        password.transform = password.transform.translatedBy(x: -view.frame.width, y: 0)
+        password.alpha = 0
+
+        loginbutton.transform = loginbutton.transform.translatedBy(x: -view.frame.width, y: 0)
+        loginbutton.alpha = 0
+
+        UIView.animate(withDuration: 1, delay: 0, options: .curveEaseInOut, animations: {
+            self.titleLabel.transform = .identity
+            self.titleLabel.alpha = 1
+        }, completion: nil)
+        
+        UIView.animate(withDuration: 1, delay: 0, options: .curveEaseInOut, animations: {
+            self.username.transform = .identity
+            self.username.alpha = 1
+        }, completion: nil)
+
+        UIView.animate(withDuration: 1, delay: 0.25, options: .curveEaseInOut, animations: {
+            self.password.transform = .identity
+            self.password.alpha = 1
+        }, completion: nil)
+
+        UIView.animate(withDuration: 1, delay: 0.5, options: .curveEaseInOut, animations: {
+            self.loginbutton.transform = .identity
+            self.loginbutton.alpha = 1
+        }, completion: nil)
+    }
+    
+    private func exitAnimation(onCompletion: @escaping (Bool) -> Void) {
+        UIView.animate(withDuration: 1, delay: 0, options: .curveEaseInOut, animations: {
+            self.titleLabel.transform = CGAffineTransform(translationX: 0, y: -self.titleLabel.frame.maxY)
+            self.titleLabel.alpha = 0
+        }, completion: nil)
+
+        UIView.animate(withDuration: 1, delay: 0.25, options: .curveEaseInOut, animations: {
+            self.username.transform = CGAffineTransform(translationX: 0, y: -self.view.convert(self.username.frame, from: self.username.superview).maxY)
+            self.username.alpha = 0
+        }, completion: nil)
+
+        UIView.animate(withDuration: 1, delay: 0.5, options: .curveEaseInOut, animations: {
+            self.password.transform = CGAffineTransform(translationX: 0, y: -self.view.convert(self.password.frame, from: self.password.superview).maxY)
+            self.password.alpha = 0
+        }, completion: nil)
+
+        UIView.animate(withDuration: 1, delay: 0.75, options: .curveEaseInOut, animations: {
+            self.loginbutton.transform = CGAffineTransform(translationX: 0, y: -self.view.convert(self.loginbutton.frame, from: self.loginbutton.superview).maxY)
+            self.loginbutton.alpha = 0
+        }, completion: onCompletion)
+
     }
     
     func buildTextField(string: String) -> UITextField {
@@ -110,8 +168,7 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-       // textField.borderStyle = .line
-        textField.layer.borderColor = UIColor.white.cgColor //your color
+        textField.layer.borderColor = UIColor.white.cgColor
         textField.layer.borderWidth = 2.0
     }
 
@@ -165,7 +222,8 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
                 defaults.set(value.user_id, forKey: "user_id")
                 
                 DispatchQueue.main.async {
-                    self.coordinator.startTabBarController()
+                    self.exitAnimation(onCompletion: {_ in
+                        self.coordinator.startTabBarController()})
                 }
         }
         }
